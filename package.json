@@ -1,0 +1,9 @@
+{
+  "name": "parcel-relay",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "check": "node --check app.js",
+    "test": "python -m unittest discover -s tests -v"
+  }
+}

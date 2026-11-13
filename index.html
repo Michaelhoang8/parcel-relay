@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Parcel Relay</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/">PR / Parcel Relay</a
+      ><span>Distributed systems · field notes 01</span
+      ><button id="refresh">Refresh</button>
+    </header>
+    <main>
+      <section class="intro">
+        <p class="eyebrow">A delivery is not an acknowledgement.</p>
+        <h1>Send once.<br />Deliver again.</h1>
+        <p>
+          Explore a transactional outbox across two independent SQLite
+          databases. Lose an acknowledgement, retry the event, and watch the
+          receiver count it only once.
+        </p>
+      </section>
+      <p id="message" role="status">Connecting to the two stores…</p>
+      <section class="stations">
+        <article>
+          <div class="heading">
+            <span class="number">01</span>
+            <h2>Sender outbox</h2>
+            <span id="pending"></span>
+          </div>
+          <div id="outbox"></div>
+          <details>
+            <summary>Create a shipment</summary>
+            <form id="create">
+              <label
+                >Request key<input id="key" required maxlength="64" /></label
+              ><button type="button" id="new-key">New key</button
+              ><label
+                >Memo<input
+                  id="memo"
+                  value="Stationery for the studio"
+                  required
+                  maxlength="120" /></label
+              ><label
+                >Items · JSON<textarea id="items" rows="6">
+[{"sku":"notebook","quantity":3},{"sku":"pen","quantity":5}]</textarea
+                ></label
+              ><button type="submit">Commit shipment + event</button>
+            </form>
+          </details>
+        </article>
+        <article>
+          <div class="heading">
+            <span class="number">02</span>
+            <h2>Receiver inbox</h2>
+            <span id="received"></span>
+          </div>
+          <div id="totals"></div>
+          <p class="caption">
+            Inventory totals come from committed receiver transactions. Repeated
+            event IDs do not add quantities again.
+          </p>
+          <div id="inbox"></div>
+        </article>
+      </section>
+      <section class="delivery">
+        <div>
+          <p class="eyebrow">Selected event</p>
+          <h2 id="selected-title">Create a shipment to begin.</h2>
+          <code id="selected-id"></code>
+        </div>
+        <form id="deliver">
+          <label
+            >Delivery scenario<select id="fault">
+              <option value="none">Receive + acknowledge</option>
+              <option value="after_receive">
+                Receive, then lose acknowledgement
+              </option>
+              <option value="before_receive">Fail before receiver</option>
+            </select></label
+          ><button id="send" type="submit" disabled>Attempt delivery</button>
+        </form>
+      </section>
+      <section>
+        <div class="heading">
+          <h2>Attempt journal</h2>
+          <button id="export">Export evidence</button><span id="audit"></span>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Attempt</th>
+                <th>Shipment</th>
+                <th>Scenario</th>
+                <th>Outcome</th>
+                <th>Receiver effect</th>
+              </tr>
+            </thead>
+            <tbody id="attempts"></tbody>
+          </table>
+        </div>
+      </section>
+      <details class="notes">
+        <summary>What this demonstrates</summary>
+        <p>
+          The sender commits a shipment and its outbox event together. The
+          receiver commits its inbox receipt and inventory changes together.
+          Those are separate transactions: there is no distributed transaction
+          between them.
+        </p>
+        <p>
+          Delivery is a local call with explicit fault injection, not a live
+          message broker. Delivery attempts are manual. The inbox retains event
+          IDs; this gives one inventory effect per retained ID, not exactly-once
+          transport. Additive inventory updates tolerate reordering. Each
+          database is read separately, so refresh during concurrent writes may
+          briefly show different moments.
+        </p>
+        <p>
+          Checksums detect accidental changes; they are not authentication. This
+          local teaching app has no accounts or remote deployment configuration.
+        </p>
+      </details>
+    </main>
+    <footer>Two stores. One observable boundary.</footer>
+  </body>
+</html>
