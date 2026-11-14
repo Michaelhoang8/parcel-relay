@@ -9,63 +9,14 @@
   </head>
   <body>
     <header>
-      <a href="/">PR / Parcel Relay</a
-      ><span>Distributed systems · field notes 01</span
-      ><button id="refresh">Refresh</button>
+      <h1>Parcel Relay</h1>
+      <div class="header-actions">
+        <button id="refresh">Refresh</button
+        ><button id="create-open" class="primary">Create shipment</button>
+      </div>
     </header>
     <main>
-      <section class="intro">
-        <p class="eyebrow">A delivery is not an acknowledgement.</p>
-        <h1>Send once.<br />Deliver again.</h1>
-        <p>
-          Explore a transactional outbox across two independent SQLite
-          databases. Lose an acknowledgement, retry the event, and watch the
-          receiver count it only once.
-        </p>
-      </section>
       <p id="message" role="status">Connecting to the two stores…</p>
-      <section class="stations">
-        <article>
-          <div class="heading">
-            <span class="number">01</span>
-            <h2>Sender outbox</h2>
-            <span id="pending"></span>
-          </div>
-          <div id="outbox"></div>
-          <details>
-            <summary>Create a shipment</summary>
-            <form id="create">
-              <label
-                >Request key<input id="key" required maxlength="64" /></label
-              ><button type="button" id="new-key">New key</button
-              ><label
-                >Memo<input
-                  id="memo"
-                  value="Stationery for the studio"
-                  required
-                  maxlength="120" /></label
-              ><label
-                >Items · JSON<textarea id="items" rows="6">
-[{"sku":"notebook","quantity":3},{"sku":"pen","quantity":5}]</textarea
-                ></label
-              ><button type="submit">Commit shipment + event</button>
-            </form>
-          </details>
-        </article>
-        <article>
-          <div class="heading">
-            <span class="number">02</span>
-            <h2>Receiver inbox</h2>
-            <span id="received"></span>
-          </div>
-          <div id="totals"></div>
-          <p class="caption">
-            Inventory totals come from committed receiver transactions. Repeated
-            event IDs do not add quantities again.
-          </p>
-          <div id="inbox"></div>
-        </article>
-      </section>
       <section class="delivery">
         <div>
           <p class="eyebrow">Selected event</p>
@@ -84,6 +35,49 @@
           ><button id="send" type="submit" disabled>Attempt delivery</button>
         </form>
       </section>
+      <div
+        class="transfer-track"
+        role="group"
+        aria-label="Selected shipment commit states"
+      >
+        <div class="track-line"><span id="track-progress"></span></div>
+        <div id="sender-stage" class="stage">
+          <i></i><strong>Sender committed</strong
+          ><span>Shipment + outbox event</span>
+        </div>
+        <div id="receiver-stage" class="stage">
+          <i></i><strong>Receiver committed</strong
+          ><span>Receipt + inventory</span>
+        </div>
+        <div id="ack-stage" class="stage">
+          <i></i><strong>Acknowledged</strong
+          ><span>Sender recorded receipt</span>
+        </div>
+      </div>
+      <section class="stations">
+        <article>
+          <div class="heading">
+            <span class="number">01</span>
+            <h2>Sender outbox</h2>
+            <span id="pending"></span>
+          </div>
+          <div id="outbox"></div>
+        </article>
+        <article>
+          <div class="heading">
+            <span class="number">02</span>
+            <h2>Receiver inbox</h2>
+            <span id="received"></span>
+          </div>
+          <div id="totals"></div>
+          <p class="caption">
+            Inventory totals come from committed receiver transactions. Repeated
+            event IDs do not add quantities again.
+          </p>
+          <div id="inbox"></div>
+        </article>
+      </section>
+
       <section>
         <div class="heading">
           <h2>Attempt journal</h2>
@@ -125,7 +119,28 @@
           local teaching app has no accounts or remote deployment configuration.
         </p>
       </details>
+      <dialog id="create-dialog" aria-labelledby="create-title">
+        <div class="heading">
+          <h2 id="create-title">Create shipment</h2>
+          <button id="create-close">Close</button>
+        </div>
+        <p id="create-message" role="status"></p>
+        <form id="create">
+          <label>Request key<input id="key" required maxlength="64" /></label
+          ><button type="button" id="new-key">New key</button
+          ><label
+            >Memo<input
+              id="memo"
+              value="Office supplies"
+              required
+              maxlength="120" /></label
+          ><label
+            >Items · JSON<textarea id="items" rows="6">
+[{"sku":"notebook","quantity":3},{"sku":"pen","quantity":5}]</textarea
+            ></label
+          ><button type="submit">Commit shipment + event</button>
+        </form>
+      </dialog>
     </main>
-    <footer>Two stores. One observable boundary.</footer>
   </body>
 </html>

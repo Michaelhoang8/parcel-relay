@@ -14,9 +14,11 @@ python run.py --port 8000
 
 Open http://127.0.0.1:8000. Data persists in ignored `data/`; use `--data another-directory` for an independent workspace. No installation or external service required. Node 22+ is only needed for the JavaScript syntax check.
 
+The selected shipment has three explicit checkpoints: sender commit, receiver commit, and sender acknowledgement. The progress line reflects persisted snapshot state, so a lost acknowledgement leaves the final checkpoint pending. Shipment creation opens in a dialog; keyboard selection retains focus. Transitions respect reduced-motion preferences.
+
 ## Try the failure boundary
 
-1. Expand **Create a shipment** and commit the fictional notebook/pen example.
+1. Open **Create shipment** and commit the fictional notebook/pen example.
 2. Choose **Receive, then lose acknowledgement**, then attempt delivery. The receiver has 3 notebooks and 5 pens, but the sender still has one pending event.
 3. Choose **Receive + acknowledge** and retry. The receiver recognizes the same ID, leaves inventory unchanged, and the sender records the acknowledgement.
 4. Repeat delivery, or create another request with **New key**. **Fail before receiver** leaves its inventory unchanged. Export the snapshots and attempt history as JSON.
@@ -37,11 +39,11 @@ Bounds: 200 shipments, 64 SKUs, 8 unique items per shipment, quantities 1–1,00
 
 ## API
 
-| Method | Path | Behavior |
-| --- | --- | --- |
-| GET | `/api/state` | Independent store snapshots, attempts, receiver totals, replay audit |
-| POST | `/api/shipments` | `{key, memo, items: [{sku, quantity}]}`; 201 new or 200 replay |
-| POST | `/api/events/{id}/deliver` | `{fault: "none"}`; also `before_receive` or `after_receive` |
+| Method | Path                       | Behavior                                                             |
+| ------ | -------------------------- | -------------------------------------------------------------------- |
+| GET    | `/api/state`               | Independent store snapshots, attempts, receiver totals, replay audit |
+| POST   | `/api/shipments`           | `{key, memo, items: [{sku, quantity}]}`; 201 new or 200 replay       |
+| POST   | `/api/events/{id}/deliver` | `{fault: "none"}`; also `before_receive` or `after_receive`          |
 
 Simulated delivery outcomes return HTTP 200 with a descriptive `status`; that does not imply successful acknowledgement. Invalid input is 400, missing event 404, conflicting identity 409. Assets use a fixed allowlist; cross-origin mutations are rejected.
 

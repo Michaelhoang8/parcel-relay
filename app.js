@@ -16,6 +16,8 @@ function element(tag, text, className) {
 function message(text, error = false) {
   $("message").textContent = text;
   $("message").classList.toggle("error", error);
+  $("create-message").textContent = text;
+  $("create-message").classList.toggle("error", error);
 }
 async function api(path, body) {
   const response = await fetch(
@@ -45,27 +47,30 @@ function render() {
   for (const event of [...state.outbox].reverse()) {
     const b = element("button", "", "parcel");
     b.type = "button";
+    b.dataset.event = event.id;
+    b.disabled = busy;
     b.setAttribute("aria-pressed", String(event.id === selected));
     b.append(
-      element("strong", "#" + event.shipmentId + " · " + event.memo),
+      element("span", "#" + event.shipmentId, "parcel-number"),
+      element("strong", event.memo),
       element(
         "small",
         event.acknowledged ? "Acknowledged" : "Awaiting acknowledgement",
       ),
     );
     b.onclick = () => {
+      if (busy) return;
       selected = event.id;
       render();
+      $("outbox")
+        .querySelector(`[data-event="${event.id}"]`)
+        ?.focus({ preventScroll: true });
     };
     $("outbox").append(b);
   }
   if (!state.outbox.length)
     $("outbox").append(
-      element(
-        "p",
-        "Your outbox is empty. Create the first shipment below.",
-        "empty",
-      ),
+      element("p", "No shipments. Use Create shipment to add one.", "empty"),
     );
   $("totals").replaceChildren();
   for (const row of state.totals) {
@@ -83,6 +88,24 @@ function render() {
       ),
   );
   const event = state.outbox.find((e) => e.id === selected);
+  const received = !!event && state.inbox.some((e) => e.id === event.id);
+  const acknowledged = !!event?.acknowledged;
+  for (const [id, done] of [
+    ["sender-stage", !!event],
+    ["receiver-stage", received],
+    ["ack-stage", acknowledged],
+  ]) {
+    $(id).classList.toggle("complete", done);
+    $(id).setAttribute(
+      "aria-label",
+      `${$(id).querySelector("strong").textContent}: ${done ? "complete" : "pending"}`,
+    );
+  }
+  $("track-progress").style.width = acknowledged
+    ? "100%"
+    : received
+      ? "50%"
+      : "0%";
   $("selected-title").textContent = event
     ? "#" + event.shipmentId + " · " + event.memo
     : "Create a shipment to begin.";
@@ -117,17 +140,23 @@ async function refresh() {
 async function action(fn) {
   if (busy) return;
   busy = true;
-  document.querySelectorAll("button").forEach((b) => (b.disabled = true));
+  document
+    .querySelectorAll("button,input,select,textarea")
+    .forEach((b) => (b.disabled = true));
   try {
     await fn();
   } catch (error) {
     message(error.message, true);
   } finally {
     busy = false;
-    document.querySelectorAll("button").forEach((b) => (b.disabled = false));
+    document
+      .querySelectorAll("button,input,select,textarea")
+      .forEach((b) => (b.disabled = false));
     if (state) render();
   }
 }
+$("create-open").onclick = () => $("create-dialog").showModal();
+$("create-close").onclick = () => $("create-dialog").close();
 $("create").onsubmit = (e) => {
   e.preventDefault();
   action(async () => {
